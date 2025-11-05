@@ -7,12 +7,12 @@ import (
 
 func TestParseLastDuration(t *testing.T) {
 	cases := map[string]time.Duration{
-		"":      30 * 24 * time.Hour,
-		"1.5m":  90 * time.Second,
-		"5h":    5 * time.Hour,
-		"7d":    7 * 24 * time.Hour,
-		"2w":    14 * 24 * time.Hour,
-		"3mo":   90 * 24 * time.Hour,
+		"":     30 * 24 * time.Hour,
+		"1.5m": 90 * time.Second,
+		"5h":   5 * time.Hour,
+		"7d":   7 * 24 * time.Hour,
+		"2w":   14 * 24 * time.Hour,
+		"3mo":  90 * 24 * time.Hour,
 	}
 
 	for input, want := range cases {

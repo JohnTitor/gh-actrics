@@ -50,12 +50,7 @@ func (c *Client) ListWorkflows(ctx context.Context, owner, repo string) ([]Workf
 		}
 
 		for _, wf := range response.Workflows {
-			workflows = append(workflows, Workflow{
-				ID:    wf.ID,
-				Name:  wf.Name,
-				Path:  wf.Path,
-				State: wf.State,
-			})
+			workflows = append(workflows, Workflow(wf))
 		}
 
 		if len(response.Workflows) == 0 || len(workflows) >= response.TotalCount {
@@ -69,9 +64,9 @@ func (c *Client) ListWorkflows(ctx context.Context, owner, repo string) ([]Workf
 
 // WorkflowRunFilter describes filters for listing workflow runs.
 type WorkflowRunFilter struct {
-	Branch             string
-	Status             string
-	Created            string
+	Branch  string
+	Status  string
+	Created string
 }
 
 // ListWorkflowRuns returns runs for the given workflow id.
