@@ -35,6 +35,32 @@ go build
 gh extension install .
 ```
 
+## Configuration
+
+### Authentication
+
+`gh-actrics` uses GitHub CLI's authentication. Ensure you're logged in:
+
+```bash
+gh auth login
+```
+
+Required scopes:
+- `repo` - Access repository data
+- `actions:read` - Read Actions data
+
+### Environment Variables
+
+All flags can be set via environment variables with the `GH_ACTIONS_METRICS_` prefix:
+
+```bash
+export GH_ACTIONS_METRICS_THREADS=8
+export GH_ACTIONS_METRICS_CACHE_TTL=15m
+export GH_ACTIONS_METRICS_LOG_LEVEL=debug
+
+gh actrics summary owner/repo
+```
+
 ## Usage
 
 ### Quick Start
@@ -153,32 +179,6 @@ gh actrics summary owner/repo --csv metrics.csv
 | `--cache-ttl` | Cache duration (e.g., 10m, 1h) | `0` |
 | `--no-cache` | Disable cache | `false` |
 | `--log-level` | Logging level (debug/info/warn/error) | `info` |
-
-## Configuration
-
-### Authentication
-
-`gh-actrics` uses GitHub CLI's authentication. Ensure you're logged in:
-
-```bash
-gh auth login
-```
-
-Required scopes:
-- `repo` - Access repository data
-- `actions:read` - Read Actions data
-
-### Environment Variables
-
-All flags can be set via environment variables with the `GH_ACTIONS_METRICS_` prefix:
-
-```bash
-export GH_ACTIONS_METRICS_THREADS=8
-export GH_ACTIONS_METRICS_CACHE_TTL=15m
-export GH_ACTIONS_METRICS_LOG_LEVEL=debug
-
-gh actrics summary owner/repo
-```
 
 ## License
 
