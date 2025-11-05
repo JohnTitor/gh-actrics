@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/JohnTitor/gh-actrics/internal/githubapi"
@@ -53,10 +54,10 @@ func newWorkflowsCmd() *cobra.Command {
 				return fmt.Errorf("failed to list workflows for %s/%s: %w", owner, repo, err)
 			}
 
-			// Filter out GitHub-hosted dependabot workflows
+			// Filter out GitHub-hosted workflows
 			workflows := make([]githubapi.Workflow, 0, len(allWorkflows))
 			for _, wf := range allWorkflows {
-				if wf.Path == "dynamic/dependabot/dependabot-updates" {
+				if strings.HasPrefix(wf.Path, "dynamic") {
 					continue
 				}
 				workflows = append(workflows, wf)
