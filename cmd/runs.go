@@ -93,7 +93,7 @@ func newRunsCmd() *cobra.Command {
 			}
 
 			for _, workflow := range selected {
-				runs, err := client.ListWorkflowRuns(ctx, owner, repo, workflow.ID, runFilter)
+				runs, err := client.ListWorkflowRuns(ctx, owner, repo, workflow.ID, runFilter, limit)
 				if err != nil {
 					if s != nil {
 						s.Stop()

@@ -61,6 +61,10 @@ export GH_ACTIONS_METRICS_LOG_LEVEL=debug
 gh actrics summary owner/repo
 ```
 
+### Response Caching
+
+When `--cache-ttl` is set to a positive duration (or `GH_ACTIONS_METRICS_CACHE_TTL` is configured), `gh-actrics` persists GitHub API responses in `~/.cache/gh-actrics`. Repeated invocations within the TTL reuse these cached payloads to reduce rate-limit pressure. Use `--no-cache` (or `GH_ACTIONS_METRICS_NO_CACHE=true`) to bypass the cache when fresh data is required.
+
 ## Usage
 
 ### Quick Start

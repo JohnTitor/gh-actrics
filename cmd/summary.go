@@ -113,7 +113,7 @@ func newSummaryCmd() *cobra.Command {
 					}
 					defer sem.Release(1)
 
-					runs, err := client.ListWorkflowRuns(gctx, owner, repo, workflow.ID, runFilter)
+					runs, err := client.ListWorkflowRuns(gctx, owner, repo, workflow.ID, runFilter, 0)
 					if err != nil {
 						return fmt.Errorf("workflow %s: %w", workflow.Name, err)
 					}
