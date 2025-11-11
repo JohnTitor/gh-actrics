@@ -26,6 +26,10 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
+const (
+	flagSummaryRuns = "runs"
+)
+
 func newSummaryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "summary <owner>/<repo>",
@@ -83,6 +87,17 @@ func newSummaryCmd() *cobra.Command {
 				Created: createdFilter,
 			}
 
+			runLimit, err := cmd.Flags().GetInt(flagSummaryRuns)
+			if err != nil {
+				return err
+			}
+			if runLimit < 0 {
+				return fmt.Errorf("--%s must be greater than or equal to 0", flagSummaryRuns)
+			}
+			if runLimit > 0 {
+				runFilter.Created = ""
+			}
+
 			threads := viper.GetInt(flagThreads)
 			if threads <= 0 {
 				threads = 1
@@ -113,7 +128,7 @@ func newSummaryCmd() *cobra.Command {
 					}
 					defer sem.Release(1)
 
-					runs, err := client.ListWorkflowRuns(gctx, owner, repo, workflow.ID, runFilter, 0)
+					runs, err := client.ListWorkflowRuns(gctx, owner, repo, workflow.ID, runFilter, runLimit)
 					if err != nil {
 						return fmt.Errorf("workflow %s: %w", workflow.Name, err)
 					}
@@ -139,6 +154,38 @@ func newSummaryCmd() *cobra.Command {
 				return err
 			}
 
+			if runLimit > 0 && len(records) > 0 {
+				var earliest, latest time.Time
+				for _, rec := range records {
+					runTime := rec.Run.RunStartedAt
+					if runTime.IsZero() {
+						runTime = rec.Run.CreatedAt
+					}
+					if runTime.IsZero() {
+						continue
+					}
+					if earliest.IsZero() || runTime.Before(earliest) {
+						earliest = runTime
+					}
+					if latest.IsZero() || runTime.After(latest) {
+						latest = runTime
+					}
+				}
+				if !earliest.IsZero() {
+					from = earliest
+				} else {
+					from = time.Time{}
+				}
+				if !latest.IsZero() {
+					to = latest
+				} else {
+					to = time.Now().UTC()
+				}
+				if to.Before(from) {
+					to = from
+				}
+			}
+
 			summary := metrics.Aggregate(records, from, to)
 
 			if viper.GetBool(flagJSON) {
@@ -159,6 +206,8 @@ func newSummaryCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().Int(flagSummaryRuns, 0, "Fetch only the most recent N runs per workflow (overrides time range filters)")
 
 	return cmd
 }

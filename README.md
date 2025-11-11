@@ -97,6 +97,14 @@ gh actrics summary owner/repo [flags]
 └──────────────┴──────┴────────┴──────────────┴──────────────┴────────────────┴─────────────────────┘
 ```
 
+Limit aggregation to the latest runs:
+
+```bash
+gh actrics summary owner/repo --runs 10
+```
+
+This collects only the ten most recent runs per workflow and ignores any time range flags.
+
 #### `workflows` - List Repository Workflows
 
 Display all workflows in a repository.
@@ -157,6 +165,15 @@ gh actrics summary owner/repo --workflow "ci.yml"
 gh actrics summary owner/repo --branch main
 ```
 
+#### Latest Runs
+
+```bash
+# Most recent 10 runs per workflow
+gh actrics summary owner/repo --runs 10
+```
+
+`--runs` ignores `--from`, `--to`, and `--last`, fetching the newest runs directly from the GitHub API.
+
 #### Output Formats
 
 ```bash
@@ -177,6 +194,7 @@ gh actrics summary owner/repo --csv metrics.csv
 | `--workflow` | Target workflows (repeatable) | All |
 | `--branch` | Filter by branch | All |
 | `--status` | Filter by status | All |
+| `--runs` | Fetch only the most recent N runs per workflow (overrides time range filters) | `0` (disabled) |
 | `--json` | JSON output | `false` |
 | `--csv` | Write CSV to path | - |
 | `--threads` | Concurrent API requests | `4` |
