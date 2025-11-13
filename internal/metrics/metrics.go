@@ -24,8 +24,20 @@ type RunnerUsage struct {
 
 // SummaryRow represents aggregated metrics for a workflow.
 type SummaryRow struct {
-	Workflow      string        `json:"workflow"`
-	WorkflowID    int64         `json:"workflow_id"`
+	Workflow      string          `json:"workflow"`
+	WorkflowID    int64           `json:"workflow_id"`
+	Runs          int             `json:"runs"`
+	Failed        int             `json:"failed"`
+	FailureRate   float64         `json:"failure_rate"`
+	AvgDuration   time.Duration   `json:"avg_duration"`
+	TotalDuration time.Duration   `json:"total_duration"`
+	RunnerSummary []RunnerUsage   `json:"runner_summary"`
+	Jobs          []JobSummaryRow `json:"jobs"`
+}
+
+// JobSummaryRow represents aggregated metrics for a workflow job.
+type JobSummaryRow struct {
+	Job           string        `json:"job"`
 	Runs          int           `json:"runs"`
 	Failed        int           `json:"failed"`
 	FailureRate   float64       `json:"failure_rate"`
@@ -53,6 +65,7 @@ func Aggregate(records []RunRecord, from, to time.Time) []SummaryRow {
 				workflow:   rec.Workflow.Name,
 				workflowID: rec.Workflow.ID,
 				runner:     make(map[string]*runnerStat),
+				jobs:       make(map[string]*jobStat),
 			}
 			workflowStats[rec.Workflow.ID] = stat
 		}
@@ -68,6 +81,7 @@ func Aggregate(records []RunRecord, from, to time.Time) []SummaryRow {
 
 		if len(rec.Jobs) > 0 {
 			accumulateRunnerStats(stat.runner, rec.Jobs)
+			accumulateJobStats(stat.jobs, rec.Jobs)
 		}
 	}
 
@@ -87,6 +101,7 @@ func Aggregate(records []RunRecord, from, to time.Time) []SummaryRow {
 		}
 
 		row.RunnerSummary = flattenRunnerStats(stat.runner)
+		row.Jobs = flattenJobStats(stat.jobs)
 		rows = append(rows, row)
 	}
 
@@ -104,11 +119,20 @@ type workflowStat struct {
 	failed     int
 	duration   time.Duration
 	runner     map[string]*runnerStat
+	jobs       map[string]*jobStat
 }
 
 type runnerStat struct {
 	duration time.Duration
 	runs     int
+}
+
+type jobStat struct {
+	name     string
+	runs     int
+	failed   int
+	duration time.Duration
+	runner   map[string]*runnerStat
 }
 
 func accumulateRunnerStats(stats map[string]*runnerStat, jobs []githubapi.WorkflowJob) {
@@ -143,6 +167,34 @@ func accumulateRunnerStats(stats map[string]*runnerStat, jobs []githubapi.Workfl
 	}
 }
 
+func accumulateJobStats(stats map[string]*jobStat, jobs []githubapi.WorkflowJob) {
+	for _, job := range jobs {
+		name := strings.TrimSpace(job.Name)
+		if name == "" {
+			name = "(unnamed)"
+		}
+
+		stat, ok := stats[name]
+		if !ok {
+			stat = &jobStat{
+				name:   name,
+				runner: make(map[string]*runnerStat),
+			}
+			stats[name] = stat
+		}
+
+		stat.runs++
+		if isFailure(job.Conclusion, job.Status) {
+			stat.failed++
+		}
+
+		duration := job.Duration()
+		stat.duration += duration
+
+		accumulateRunnerStats(stat.runner, []githubapi.WorkflowJob{job})
+	}
+}
+
 func flattenRunnerStats(stats map[string]*runnerStat) []RunnerUsage {
 	if len(stats) == 0 {
 		return nil
@@ -162,6 +214,39 @@ func flattenRunnerStats(stats map[string]*runnerStat) []RunnerUsage {
 			return out[i].Label < out[j].Label
 		}
 		return out[i].Duration > out[j].Duration
+	})
+
+	return out
+}
+
+func flattenJobStats(stats map[string]*jobStat) []JobSummaryRow {
+	if len(stats) == 0 {
+		return nil
+	}
+
+	out := make([]JobSummaryRow, 0, len(stats))
+	for _, stat := range stats {
+		row := JobSummaryRow{
+			Job:           stat.name,
+			Runs:          stat.runs,
+			Failed:        stat.failed,
+			TotalDuration: stat.duration,
+		}
+
+		if stat.runs > 0 {
+			row.AvgDuration = time.Duration(int64(stat.duration) / int64(stat.runs))
+			row.FailureRate = float64(stat.failed) / float64(stat.runs)
+		}
+
+		row.RunnerSummary = flattenRunnerStats(stat.runner)
+		out = append(out, row)
+	}
+
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].TotalDuration == out[j].TotalDuration {
+			return out[i].Job < out[j].Job
+		}
+		return out[i].TotalDuration > out[j].TotalDuration
 	})
 
 	return out

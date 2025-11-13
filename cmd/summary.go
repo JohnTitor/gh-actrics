@@ -320,4 +320,55 @@ func renderColoredSummary(w io.Writer, rows []metrics.SummaryRow, colorEnabled b
 
 	table.Render()
 	fmt.Fprintln(w)
+
+	for _, row := range rows {
+		if len(row.Jobs) == 0 {
+			continue
+		}
+
+		jobTitle := color.New(color.FgHiWhite, color.Bold)
+		jobTitle.Fprintf(w, "🔧 Jobs for %s\n", row.Workflow)
+
+		jobTable := tablewriter.NewWriter(w)
+		jobTable.SetHeader([]string{"Job", "Runs", "Failed", "Failure Rate", "Avg Duration", "Total Duration", "Top Runners"})
+		jobTable.SetBorder(true)
+		jobTable.SetHeaderColor(
+			tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
+			tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
+			tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
+			tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
+			tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
+			tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
+			tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
+		)
+		jobTable.SetColumnColor(
+			tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiWhiteColor},
+			tablewriter.Colors{tablewriter.FgGreenColor},
+			tablewriter.Colors{tablewriter.FgRedColor},
+			tablewriter.Colors{tablewriter.FgYellowColor},
+			tablewriter.Colors{tablewriter.FgBlueColor},
+			tablewriter.Colors{tablewriter.FgMagentaColor},
+			tablewriter.Colors{tablewriter.FgHiBlackColor},
+		)
+
+		for _, job := range row.Jobs {
+			jobFailureRate := fmt.Sprintf("%.1f%%", job.FailureRate*100)
+			jobAvgDuration := output.FormatDuration(job.AvgDuration)
+			jobTotalDuration := output.FormatDuration(job.TotalDuration)
+			jobTopRunners := output.FormatRunnerSummary(job.RunnerSummary, 2)
+
+			jobTable.Append([]string{
+				job.Job,
+				fmt.Sprintf("%d", job.Runs),
+				fmt.Sprintf("%d", job.Failed),
+				jobFailureRate,
+				jobAvgDuration,
+				jobTotalDuration,
+				jobTopRunners,
+			})
+		}
+
+		jobTable.Render()
+		fmt.Fprintln(w)
+	}
 }
