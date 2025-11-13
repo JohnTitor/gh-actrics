@@ -24,6 +24,7 @@ const (
 	flagStatus   = "status"
 	flagJSON     = "json"
 	flagCSV      = "csv"
+	flagMarkdown = "markdown"
 	flagThreads  = "threads"
 	flagCacheTTL = "cache-ttl"
 	flagNoCache  = "no-cache"
@@ -80,6 +81,7 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().String(flagStatus, "", "Filter runs by combined status (success, failure, cancelled, etc.)")
 	cmd.PersistentFlags().Bool(flagJSON, false, "Print aggregated metrics as JSON")
 	cmd.PersistentFlags().String(flagCSV, "", "Write aggregated metrics as CSV to the given path")
+	cmd.PersistentFlags().Bool(flagMarkdown, false, "Render output as Markdown tables")
 	cmd.PersistentFlags().Int(flagThreads, 4, "Maximum number of concurrent API requests")
 	cmd.PersistentFlags().Duration(flagCacheTTL, 0, "Duration to cache API responses (e.g. 10m, 1h)")
 	cmd.PersistentFlags().Bool(flagNoCache, false, "Disable on-disk API response cache")

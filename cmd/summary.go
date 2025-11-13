@@ -200,6 +200,11 @@ func newSummaryCmd() *cobra.Command {
 				}
 			}
 
+			if viper.GetBool(flagMarkdown) {
+				renderMarkdownSummary(stdout, summary)
+				return nil
+			}
+
 			// Pretty colored output
 			terminal2 := term.FromEnv()
 			renderColoredSummary(os.Stdout, summary, terminal2.IsColorEnabled())
@@ -369,6 +374,64 @@ func renderColoredSummary(w io.Writer, rows []metrics.SummaryRow, colorEnabled b
 		}
 
 		jobTable.Render()
+		fmt.Fprintln(w)
+	}
+}
+
+func renderMarkdownSummary(w io.Writer, rows []metrics.SummaryRow) {
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "# Workflow Execution Summary")
+	fmt.Fprintln(w)
+
+	if len(rows) == 0 {
+		fmt.Fprintln(w, "_No workflow runs found in the specified time range._")
+		return
+	}
+
+	fmt.Fprintln(w, "| Workflow | Runs | Failed | Failure Rate | Avg Duration | Total Duration | Top Runners |")
+	fmt.Fprintln(w, "| --- | ---: | ---: | ---: | ---: | ---: | --- |")
+	for _, row := range rows {
+		failureRate := output.FormatFailureRate(row.FailureRate)
+		avgDuration := output.FormatDuration(row.AvgDuration)
+		totalDuration := output.FormatDuration(row.TotalDuration)
+		topRunners := output.FormatRunnerSummary(row.RunnerSummary, len(row.RunnerSummary))
+
+		fmt.Fprintf(w, "| %s | %d | %d | %s | %s | %s | %s |\n",
+			row.Workflow,
+			row.Runs,
+			row.Failed,
+			failureRate,
+			avgDuration,
+			totalDuration,
+			topRunners,
+		)
+	}
+	fmt.Fprintln(w)
+
+	for _, row := range rows {
+		if len(row.Jobs) == 0 {
+			continue
+		}
+
+		fmt.Fprintf(w, "## Jobs for %s\n\n", row.Workflow)
+		fmt.Fprintln(w, "| Job | Runs | Failed | Failure Rate | Avg Duration | Total Duration | Top Runners |")
+		fmt.Fprintln(w, "| --- | ---: | ---: | ---: | ---: | ---: | --- |")
+		for _, job := range row.Jobs {
+			failureRate := output.FormatFailureRate(job.FailureRate)
+			avgDuration := output.FormatDuration(job.AvgDuration)
+			totalDuration := output.FormatDuration(job.TotalDuration)
+			topRunners := output.FormatRunnerSummary(job.RunnerSummary, len(job.RunnerSummary))
+
+			fmt.Fprintf(w, "| %s | %d | %d | %s | %s | %s | %s |\n",
+				job.Job,
+				job.Runs,
+				job.Failed,
+				failureRate,
+				avgDuration,
+				totalDuration,
+				topRunners,
+			)
+		}
 		fmt.Fprintln(w)
 	}
 }

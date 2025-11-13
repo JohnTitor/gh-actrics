@@ -4,12 +4,14 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/JohnTitor/gh-actrics/internal/githubapi"
+	"github.com/JohnTitor/gh-actrics/internal/output"
 	"github.com/JohnTitor/gh-actrics/internal/util"
 	"github.com/briandowns/spinner"
 	"github.com/cli/go-gh/v2/pkg/tableprinter"
@@ -136,6 +138,11 @@ func newRunsCmd() *cobra.Command {
 				return nil
 			}
 
+			if viper.GetBool(flagMarkdown) {
+				renderRunsMarkdown(stdout, rows)
+				return nil
+			}
+
 			isTerminal := isTerminalWriter(os.Stdout)
 			terminalWidth := 120
 			tp := tableprinter.New(os.Stdout, isTerminal, terminalWidth)
@@ -225,4 +232,32 @@ func exportRunsCSV(rows []runRow, path string) error {
 
 	writer.Flush()
 	return writer.Error()
+}
+
+func renderRunsMarkdown(w io.Writer, rows []runRow) {
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "# Workflow Runs")
+	fmt.Fprintln(w)
+
+	if len(rows) == 0 {
+		fmt.Fprintln(w, "_No workflow runs found in the specified time range._")
+		return
+	}
+
+	fmt.Fprintln(w, "| Workflow | Run ID | Status | Conclusion | Duration | Branch | Run # | Attempt | Created |")
+	fmt.Fprintln(w, "| --- | --- | --- | --- | --- | --- | ---: | ---: | --- |")
+	for _, row := range rows {
+		fmt.Fprintf(w, "| %s | %d | %s | %s | %s | %s | %d | %d | %s |\n",
+			row.WorkflowName,
+			row.RunID,
+			row.Status,
+			row.Conclusion,
+			output.FormatDuration(row.Duration),
+			row.HeadBranch,
+			row.RunNumber,
+			row.RunAttempt,
+			row.CreatedAt.Format(time.RFC3339),
+		)
+	}
+	fmt.Fprintln(w)
 }

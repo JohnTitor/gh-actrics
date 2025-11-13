@@ -74,6 +74,11 @@ func newWorkflowsCmd() *cobra.Command {
 				return encoder.Encode(workflows)
 			}
 
+			if viper.GetBool(flagMarkdown) {
+				renderMarkdownWorkflows(stdout, workflows, owner, repo)
+				return nil
+			}
+
 			// Pretty colored output
 			terminal2 := term.FromEnv()
 			renderColoredWorkflows(os.Stdout, workflows, owner, repo, terminal2.IsColorEnabled())
@@ -126,5 +131,29 @@ func renderColoredWorkflows(w io.Writer, workflows []githubapi.Workflow, owner, 
 	}
 
 	table.Render()
+	fmt.Fprintln(w)
+}
+
+func renderMarkdownWorkflows(w io.Writer, workflows []githubapi.Workflow, owner, repo string) {
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "# Workflows in %s/%s\n", owner, repo)
+	fmt.Fprintln(w)
+
+	if len(workflows) == 0 {
+		fmt.Fprintln(w, "_No workflows found._")
+		return
+	}
+
+	fmt.Fprintln(w, "| ID | Name | Path | State |")
+	fmt.Fprintln(w, "| ---: | --- | --- | --- |")
+	for _, workflow := range workflows {
+		state := workflow.State
+		fmt.Fprintf(w, "| %d | %s | %s | %s |\n",
+			workflow.ID,
+			workflow.Name,
+			workflow.Path,
+			state,
+		)
+	}
 	fmt.Fprintln(w)
 }

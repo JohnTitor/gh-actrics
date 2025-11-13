@@ -16,7 +16,7 @@ Perfect for DevOps teams, Platform Engineers, and SREs who need to monitor and o
 - Failure rates and success tracking
 - Runner usage statistics (labels, execution time)
 - Execution counts over customizable time periods
-- JSON and CSV output support
+- JSON, CSV, and Markdown output support
 
 ## Installation
 
@@ -182,6 +182,9 @@ gh actrics summary owner/repo --json
 
 # CSV export
 gh actrics summary owner/repo --csv metrics.csv
+
+# Markdown output
+gh actrics summary owner/repo --markdown
 ```
 
 ### Complete Flag Reference
@@ -197,6 +200,7 @@ gh actrics summary owner/repo --csv metrics.csv
 | `--runs` | Fetch only the most recent N runs per workflow (overrides time range filters) | `0` (disabled) |
 | `--json` | JSON output | `false` |
 | `--csv` | Write CSV to path | - |
+| `--markdown` | Render Markdown tables to stdout | `false` |
 | `--threads` | Concurrent API requests | `4` |
 | `--cache-ttl` | Cache duration (e.g., 10m, 1h) | `0` |
 | `--no-cache` | Disable cache | `false` |
